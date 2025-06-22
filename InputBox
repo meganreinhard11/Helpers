@@ -1,0 +1,525 @@
+Option Compare Database
+Option Explicit
+
+Public Enum SPACING
+    eSmall = 1&
+    eMedium = 3&
+    eLarge = 5&
+End Enum
+
+#If Win64 Then
+    Private Const NULL_PTR = 0^
+#Else
+    Private Const NULL_PTR = 0&
+#End If
+   
+#If VBA7 Then
+    #If Win64 Then
+        Private Declare PtrSafe Function GetWindowLong Lib "user32" Alias "GetWindowLongPtrW" (ByVal hwnd As LongLong, ByVal nIndex As Long) As LongLong
+    #Else
+        Private Declare PtrSafe Function GetWindowLong Lib "user32.dll" Alias "GetWindowLongW" (ByVal hwnd As Long, ByVal nIndex As Long) As Long
+    #End If
+    Private Declare PtrSafe Function ShowWindow Lib "user32" (ByVal hwnd As LongPtr, ByVal nCmdShow As Long) As Long
+    Private Declare PtrSafe Function InitCommonControlsEx Lib "comctl32" (iccex As InitCommonControlsEx) As Long
+    Private Declare PtrSafe Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hwndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, lpParam As Any) As LongPtr
+    Private Declare PtrSafe Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleW" (ByVal lpModuleName As LongPtr) As LongPtr
+    Private Declare PtrSafe Function GetWindowRect Lib "user32" (ByVal hwnd As LongPtr, lpRect As RECT) As Long
+    Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hwnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, lParam As Any) As Long
+    Private Declare PtrSafe Function TranslateColor Lib "oleaut32.dll" Alias "OleTranslateColor" (ByVal Clr As OLE_COLOR, ByVal palet As LongPtr, Col As Long) As Long
+    Private Declare PtrSafe Function ScreenToClient Lib "user32" (ByVal hwnd As LongPtr, lpPoint As POINTAPI) As Long
+    Private Declare PtrSafe Function SetWindowPos Lib "user32" (ByVal hwnd As LongPtr, ByVal hWndInsertAfter As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long) As Long
+    Private Declare PtrSafe Function GetParent Lib "user32" (ByVal hwnd As LongPtr) As LongPtr
+    Private Declare PtrSafe Function GetClassName Lib "user32" Alias "GetClassNameA" (ByVal hwnd As LongPtr, ByVal lpClassName As String, ByVal nMaxCount As Long) As Long
+    Private Declare PtrSafe Function DestroyWindow Lib "user32" (ByVal hwnd As LongPtr) As Long
+    Private Declare PtrSafe Function GetNextWindow Lib "user32" Alias "GetWindow" (ByVal hwnd As LongPtr, ByVal wFlag As Long) As LongPtr
+    Public Declare PtrSafe Function SetProp Lib "user32" Alias "SetPropW" (ByVal hwnd As LongPtr, ByVal lpString As LongPtr, ByVal hData As LongPtr) As Long
+    Public Declare PtrSafe Function GetProp Lib "user32" Alias "GetPropW" (ByVal hwnd As LongPtr, ByVal lpString As LongPtr) As LongPtr
+    Private Declare PtrSafe Function GetDC Lib "user32" (ByVal hwnd As LongPtr) As LongPtr
+    Private Declare PtrSafe Function ReleaseDC Lib "user32" (ByVal hwnd As LongPtr, ByVal hDC As LongPtr) As Long
+    Private Declare PtrSafe Function FillRect Lib "user32" (ByVal hDC As LongPtr, lpRect As RECT, ByVal hBrush As LongPtr) As Long
+    Private Declare PtrSafe Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As LongPtr
+    Private Declare PtrSafe Function DeleteObject Lib "gdi32" (ByVal hObject As LongPtr) As Long
+    Private Declare PtrSafe Function BeginPaint Lib "user32" (ByVal hwnd As LongPtr, lpPaint As PAINTSTRUCT) As LongPtr
+    Private Declare PtrSafe Function EndPaint Lib "user32" (ByVal hwnd As LongPtr, lpPaint As PAINTSTRUCT) As Long
+    Private Declare PtrSafe Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As LongPtr) As LongPtr
+    Private Declare PtrSafe Function FreeLibrary Lib "kernel32" (ByVal hLibModule As LongPtr) As Long
+    Private Declare PtrSafe Function GetBkColor Lib "gdi32" (ByVal hDC As LongPtr) As Long
+    Private Declare PtrSafe Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
+    Private Declare PtrSafe Function GetCurrentThreadId Lib "kernel32" () As Long
+    Private Declare PtrSafe Function CallNextHookEx Lib "user32" (ByVal hKBhook As LongPtr, ByVal ncode As Long, ByVal wParam As LongPtr, lParam As Any) As LongPtr
+    Private Declare PtrSafe Function UnhookWindowsHookEx Lib "user32" (ByVal hKBhook As LongPtr) As Long
+    Private Declare PtrSafe Function SetWindowsHookEx Lib "user32" Alias "SetWindowsHookExW" (ByVal idHook As Long, ByVal lpfn As LongPtr, ByVal hMod As LongPtr, ByVal dwThreadId As Long) As LongPtr
+    Private Declare PtrSafe Function GetDlgItem Lib "user32" (ByVal hDlg As LongPtr, ByVal nIDDlgItem As Long) As LongPtr
+    Private Declare PtrSafe Function SetWindowText Lib "user32" Alias "SetWindowTextA" (ByVal hwnd As LongPtr, ByVal lpString As String) As Long
+    Private Declare PtrSafe Function DefSubclassProc Lib "comctl32.dll" Alias "#413" (ByVal hwnd As LongPtr, ByVal uMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+    Private Declare PtrSafe Function SetWindowSubclass Lib "comctl32.dll" Alias "#410" (ByVal hwnd As LongPtr, ByVal pfnSubclass As LongPtr, ByVal uIdSubclass As LongPtr, Optional ByVal dwRefData As LongPtr) As LongPtr
+    Private Declare PtrSafe Function RemoveWindowSubclass Lib "comctl32.dll" Alias "#412" (ByVal hwnd As LongPtr, ByVal pfnSubclass As LongPtr, ByVal uIdSubclass As LongPtr) As LongPtr
+    Private Declare PtrSafe Function SafeArrayGetDim Lib "oleaut32.dll" (psa() As Any) As Long
+    Private Declare PtrSafe Function GetTextMetrics Lib "gdi32" Alias "GetTextMetricsW" (ByVal hDC As LongPtr, lpMetrics As TEXTMETRIC) As Long
+    Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+#Else
+    Private Enum LongPtr
+        [_]
+    End Enum
+    Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hwnd As Long, ByVal nIndex As Long) As Long
+    Private Declare Function InitCommonControlsEx Lib "comctl32.dll" (iccex As InitCommonControlsEx) As Long
+    Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hwndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, lpParam As Any) As LongPtr
+    Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleW" (ByVal lpModuleName As LongPtr) As LongPtr
+    Private Declare Function GetWindowRect Lib "user32" (ByVal hwnd As LongPtr, lpRect As RECT) As Long
+    Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hwnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, lParam As Any) As Long
+    Private Declare Function TranslateColor Lib "oleaut32.dll" Alias "OleTranslateColor" (ByVal Clr As OLE_COLOR, ByVal palet As LongPtr, Col As Long) As Long
+    Private Declare Function ScreenToClient Lib "user32" (ByVal hwnd As LongPtr, lpPoint As POINTAPI) As Long
+    Private Declare Function SetWindowPos Lib "user32" (ByVal hwnd As LongPtr, ByVal hWndInsertAfter As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long) As Long
+    Private Declare Function GetParent Lib "user32" (ByVal hwnd As LongPtr) As LongPtr
+    Private Declare Function GetClassName Lib "user32" Alias "GetClassNameA" (ByVal hwnd As LongPtr, ByVal lpClassName As String, ByVal nMaxCount As Long) As Long
+    Private Declare Function DestroyWindow Lib "user32" (ByVal hwnd As LongPtr) As Long
+    Private Declare Function GetNextWindow Lib "user32" Alias "GetWindow" (ByVal hwnd As LongPtr, ByVal wFlag As Long) As LongPtr
+    Private Declare Function SetProp Lib "user32" Alias "SetPropW" (ByVal hwnd As LongPtr, ByVal lpString As LongPtr, ByVal hData As LongPtr) As Long
+    Private Declare Function GetProp Lib "user32" Alias "GetPropW" (ByVal hwnd As LongPtr, ByVal lpString As LongPtr) As LongPtr
+    Private Declare Function GetDC Lib "user32" (ByVal hwnd As LongPtr) As LongPtr
+    Private Declare Function ReleaseDC Lib "user32" (ByVal hwnd As LongPtr, ByVal hDC As LongPtr) As Long
+    Private Declare Function FillRect Lib "user32" (ByVal hDC As LongPtr, lpRect As RECT, ByVal hBrush As LongPtr) As Long
+    Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As LongPtr
+    Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As LongPtr) As Long
+    Private Declare Function BeginPaint Lib "user32" (ByVal hwnd As LongPtr, lpPaint As PAINTSTRUCT) As LongPtr
+    Private Declare Function EndPaint Lib "user32" (ByVal hwnd As LongPtr, lpPaint As PAINTSTRUCT) As Long
+    Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As LongPtr) As LongPtr
+    Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As LongPtr) As Long
+    Private Declare Function GetBkColor Lib "gdi32" (ByVal hDC As LongPtr) As Long
+    Private Declare Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
+    Private Declare Function GetCurrentThreadId Lib "kernel32" () As Long
+    Private Declare Function CallNextHookEx Lib "user32" (ByVal hKBhook As LongPtr, ByVal ncode As Long, ByVal wParam As LongPtr, lParam As Any) As LongPtr
+    Private Declare Function UnhookWindowsHookEx Lib "user32" (ByVal hKBhook As LongPtr) As Long
+    Private Declare Function SetWindowsHookEx Lib "user32" Alias "SetWindowsHookExW" (ByVal idHook As Long, ByVal lpfn As LongPtr, ByVal hMod As LongPtr, ByVal dwThreadId As Long) As LongPtr
+    Private Declare Function GetDlgItem Lib "user32" (ByVal hDlg As LongPtr, ByVal nIDDlgItem As Long) As LongPtr
+    Private Declare Function SetWindowText Lib "user32" Alias "SetWindowTextW" (ByVal hwnd As LongPtr, ByVal lpString As String) As Long
+    Private Declare Function DefSubclassProc Lib "comctl32.dll" Alias "#413" (ByVal hwnd As LongPtr, ByVal uMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+    Private Declare Function SetWindowSubclass Lib "comctl32.dll" Alias "#410" (ByVal hwnd As LongPtr, ByVal pfnSubclass As LongPtr, ByVal uIdSubclass As LongPtr, Optional ByVal dwRefData As LongPtr) As LongPtr
+    Private Declare Function RemoveWindowSubclass Lib "comctl32.dll" Alias "#412" (ByVal hwnd As LongPtr, ByVal pfnSubclass As LongPtr, ByVal uIdSubclass As LongPtr) As LongPtr
+    Private Declare Function SafeArrayGetDim Lib "oleaut32.dll" (psa() As Any) As Long
+    Private Declare Function GetTextMetrics Lib "gdi32" Alias "GetTextMetricsW" (ByVal hDC As LongPtr, lpMetrics As TEXTMETRIC) As Long
+    Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+#End If
+
+Private Type InitCommonControlsEx
+   Size As Long
+   ICC As Long
+End Type
+
+Private Type POINTAPI
+    X As Long
+    Y As Long
+End Type
+
+Private Type RECT
+    Left   As Long
+    Top    As Long
+    Right  As Long
+    Bottom As Long
+End Type
+
+Private Type TEXTMETRIC
+    tmHeight As Long
+    tmAscent As Long
+    tmDescent As Long
+    tmInternalLeading As Long
+    tmExternalLeading As Long
+    tmAveCharWidth As Long
+    tmMaxCharWidth As Long
+    tmWeight As Long
+    tmOverhang As Long
+    tmDigitizedAspectX As Long
+    tmDigitizedAspectY As Long
+    tmFist4Byes As Long
+    tmSecond4Byes As Long
+    tmCharSet As Byte
+End Type
+
+Private Type PAINTSTRUCT
+    hDC As LongPtr
+    fErase As Long
+    rcPaint As RECT
+    fRestore As Long
+    fIncUpdate As Long
+    rgbReserved(0& To 31&) As Byte
+End Type
+
+Private Type LVCOLUMNA
+    mask As Long
+    fmt As Long
+    cx As Long
+    pszText As String
+    cchTextMax As Long
+    iSubItem As Long
+    iImage As Long
+    iOrder  As Long
+    cxMin  As Long
+    cxDefault  As Long
+    cxIdeal  As Long
+End Type
+
+Const WIN32_IE = &H501
+Private Type LVITEMA
+    mask As Long
+    iItem As Long
+    iSubItem As Long
+    state As Long
+    stateMask As Long
+    pszText As String
+    cchTextMax As Long
+    iImage As Long
+    lParam As Long
+    #If (WIN32_IE >= &H300) Then
+        iIndent As Long
+        iGroupId As Long
+        cColumns As Long
+        puColumns As LongPtr
+    #End If
+End Type
+
+Private Const WC_LISTVIEW = "SysListView32"
+Private Const MSFTEDIT_CLASS = "RichEdit50W"
+
+Private Const ICC_LISTVIEW_CLASSES = &H1
+
+Private Const WM_USER = &H400
+Private Const WM_LBUTTONDOWN = &H201
+Private Const WM_RBUTTONDOWN = &H204
+Private Const WM_ERASEBKGND = &H14
+Private Const WM_PAINT = &HF
+Private Const WM_DESTROY = &H2
+Private Const WM_GETFONT = &H31
+Private Const WM_SETFONT = &H30
+Private Const WM_SHOWWINDOW = &H18
+
+Private Const WS_CHILD = &H40000000
+Private Const WS_VISIBLE = &H10000000
+Private Const WS_BORDER = &H800000
+
+Private Const COLOR_WINDOW = 5&
+
+Private Const SWP_NOMOVE = &H2
+Private Const SWP_SHOWWINDOW = &H40
+
+Private Const WH_CBT = 5&
+Private Const HC_ACTION = 0&
+Private Const HCBT_ACTIVATE = 5&
+
+Private Const CW_USEDEFAULT = &H80000000
+
+Private Const ES_MULTILINE = &H4
+Private Const ES_READONLY = &H800&
+Private Const ES_AUTOVSCROLL = &H40
+Private Const EM_GETLINECOUNT = &HBA
+Private Const EM_SETTARGETDEVICE = WM_USER + 72&
+
+Private Const GWL_STYLE = (-16&)
+
+Private Const GW_CHILD = 5&
+Private Const GW_HWNDNEXT = 2&
+
+Private Const SM_CXSCREEN = 0&
+Private Const SM_CYSCREEN = 1&
+
+Private Const COLOR_BTNFACE = 15&
+
+Private Const LVM_FIRST = &H1000
+Private Const LVM_GETITEMCOUNT = (LVM_FIRST + 4&)
+Private Const LVM_INSERTITEM = (LVM_FIRST + 7&), LVM_SETITEM = (LVM_FIRST + 6&)
+Private Const LVM_INSERTCOLUMN = (LVM_FIRST + 27&)
+Private Const LVM_SETCOLUMNWIDTH = (LVM_FIRST + 30&)
+Private Const LVM_SETBKCOLOR = (LVM_FIRST + 1&)
+Private Const LVM_SETTEXTCOLOR = (LVM_FIRST + 36&)
+Private Const LVM_SETTEXTBKCOLOR = (LVM_FIRST + 38&)
+Private Const LVM_APPROXIMATEVIEWRECT = (LVM_FIRST + 64&)
+Private Const LVM_GETITEMRECT = (LVM_FIRST + 14&)
+Private Const LVS_REPORT = &H1
+Private Const LVS_NOCOLUMNHEADER = &H4000
+Private Const LVIF_TEXT = &H1
+Private Const LVSCW_AUTOSIZE = -1&
+    
+Private Const SWP_NOSIZE = &H1
+Private Const SWP_NOZORDER = &H4
+Private Const SWP_NOACTIVATE = &H10
+
+Private Const SS_ICON = &H3&
+
+Private vArray() As Variant
+Private bArrayIsExcelRange As Boolean
+Private sSmallDescription As String
+Private lTextColor As Long
+Private eSpacing As SPACING
+Private bHasHeader As Boolean
+Private bSubclassed As Boolean
+Private ButtonsArray() As LongPtr
+Private hCBTHook As LongPtr
+Private hLView As LongPtr
+Private hEdit As LongPtr
+Private hBrush As LongPtr
+
+
+'_______________________________________ Public Routine ________________________________________________
+
+Public Sub BuildTabFormat(DataArray() As Variant, Optional ByVal IsArrayExcelRange As Boolean, Optional ByVal TableDescription As String, Optional ByVal TextColor As Long = -1, Optional ByVal SpaceBetweenCols As SPACING = eMedium, Optional ByVal HasHeader As Boolean = True)
+    If SafeArrayGetDim(DataArray) = 0 Then
+        MsgBox "Table array non-initialized.", vbCritical, "Error!"
+        End
+    End If
+    vArray = DataArray
+    bArrayIsExcelRange = IsArrayExcelRange
+    sSmallDescription = TableDescription
+    lTextColor = TextColor
+    eSpacing = SpaceBetweenCols
+    bHasHeader = HasHeader
+    If hCBTHook = NULL_PTR Then hCBTHook = SetWindowsHookEx(WH_CBT, AddressOf HookProc, NULL_PTR, GetCurrentThreadId)
+End Sub
+
+Private Function HookProc(ByVal idHook As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+    Dim sBuffer As String * 256&, lRet As Long
+    Dim hPrompt As LongPtr
+    If idHook < HC_ACTION Then
+        HookProc = CallNextHookEx(hCBTHook, idHook, wParam, lParam)
+        Exit Function
+    End If
+    If idHook = HCBT_ACTIVATE Then
+        lRet = GetClassName(wParam, sBuffer, 256&)
+        If VBA.Left(sBuffer, lRet) = "#32770" Then
+            hPrompt = GetDlgItem(wParam, &HFFFF&)
+            'Call SetWindowText(hPrompt, StrPtr(vbNullString))
+            Call MakeTable(wParam, vArray)
+            Call UnhookWindowsHookEx(hCBTHook)
+            hCBTHook = NULL_PTR
+            If bSubclassed = False Then
+                bSubclassed = True
+                Call SetProp(Application.hWndAccessApp, StrPtr("MsgBox"), wParam)
+                Call SetWindowSubclass(wParam, AddressOf DefWinProc, wParam)
+            End If
+        End If
+    End If
+End Function
+
+Private Sub MakeTable(ByVal hwnd As LongPtr, Ar() As Variant)
+    Dim tPromptRect As RECT, tItemRect As RECT
+    Dim tPt As POINTAPI
+    Dim lWidth As Long, lHeight As Long
+    Dim Row As Long, Col As Long
+    Dim lIconWith As Long
+    Dim lBkColor As Long
+    Dim lRet As Long
+    Dim hPrompt As LongPtr
+    Dim hFont As LongPtr
+    InitializeCommonControls
+    hPrompt = GetDlgItem(hwnd, &HFFFF&)
+    Call GetWindowRect(hPrompt, tPromptRect)
+    tPt.X = tPromptRect.Left: tPt.Y = tPromptRect.Top
+    Call ScreenToClient(hwnd, tPt)
+    If IconExists(hwnd) = False Then lIconWith = 24&
+    Const dwStyle = WS_BORDER Or WS_CHILD Or WS_VISIBLE Or LVS_REPORT Or LVS_SHOWSELALWAYS Or LVS_SINGLESEL
+    hLView = CreateWindowEx(0&, StrPtr(WC_LISTVIEW), StrPtr("MyLView"), dwStyle, tPt.X + lIconWith, tPt.Y, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, 0&, 0&, ByVal 0&)
+    Call SendMessage(hLView, LVM_SETEXTENDEDLISTVIEWSTYLE, SendMessage(hLView, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0&) Or LVS_EX_FULLROWSELECT, ByVal True)
+    If Len(sSmallDescription) Then
+        hFont = SendMessage(hPrompt, WM_GETFONT, NULL_PTR, ByVal 0&)
+        hEdit = CreateWindowEx(0&, StrPtr("Edit"), StrPtr(sSmallDescription), WS_CHILD + WS_VISIBLE + ES_MULTILINE + ES_READONLY + ES_AUTOVSCROLL, tPt.X + lIconWith, tPt.Y, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, NULL_PTR, GetModuleHandle(StrPtr(vbNullString)), ByVal 0&)
+        Call SetProp(Application.hWndAccessApp, StrPtr("Edit"), hEdit)
+        Call SetWindowSubclass(hEdit, AddressOf DefWinProc, hEdit)
+        Call SendMessage(hEdit, WM_SETFONT, hFont, True)
+    End If
+    Call SetProp(Application.hWndAccessApp, StrPtr("ListView"), hLView)
+    Call SetWindowSubclass(hLView, AddressOf DefWinProc, hLView)
+    Call DestroyWindow(hPrompt)
+    Call TranslateColor(GetSysColor(COLOR_WINDOW), NULL_PTR, lBkColor)
+    Call SendMessage(hLView, LVM_SETBKCOLOR, NULL_PTR, ByVal lBkColor)
+    Call SendMessage(hLView, LVM_SETTEXTBKCOLOR, NULL_PTR, ByVal lBkColor)
+    Call SendMessage(hLView, LVM_SETTEXTCOLOR, NULL_PTR, ByVal lTextColor)
+    Call AddColums(hLView, UBound(Ar, 2&), Ar)
+    For Row = LBound(Ar, 1&) + (-CLng(Not bArrayIsExcelRange) Mod 2&) To UBound(Ar, 1&)
+        For Col = LBound(Ar, 2&) + (-CLng(Not bArrayIsExcelRange) Mod 2&) To UBound(Ar, 2&)
+            Call AddTableEntries(hLView, Row, Col, CStr(Ar(Row, Col)))
+        Next
+    Next Row
+    lRet = SendMessage(hLView, LVM_APPROXIMATEVIEWRECT, -1&, ByVal 0&)
+    If LOWORD(lRet) Then lWidth = LOWORD(lRet)
+    If lWidth < 250& Then lWidth = 250&
+    If lWidth > 650& Then lWidth = 650&
+    If HIWORD(lRet) Then lHeight = HIWORD(lRet)
+    If lHeight > 500& Then lHeight = 500&
+    Call SendMessage(hLView, LVM_GETITEMRECT, 1&, tItemRect)
+    Call SetWindowPos(hLView, NULL_PTR, 0&, 0&, lWidth, lHeight, SWP_SHOWWINDOW + SWP_NOMOVE)
+    Call AdjustWindowsRects(hLView)
+End Sub
+
+Private Sub InitializeCommonControls()
+    Dim iccex As InitCommonControlsEx
+    iccex.Size = LenB(iccex)
+    iccex.ICC = ICC_LISTVIEW_CLASSES
+    InitCommonControlsEx iccex
+End Sub
+
+Private Function IconExists(ByVal hwnd As LongPtr) As Boolean
+    Dim sBuffer As String * 256&
+    Dim lRet As Long
+    Dim hChild As LongPtr
+    hChild = GetNextWindow(hwnd, GW_CHILD)
+    Do While hChild
+        lRet = GetClassName(hChild, sBuffer, 256&)
+        If VBA.Left(sBuffer, lRet) = "Static" Then If CLng(GetWindowLong(hChild, GWL_STYLE)) And SS_ICON Then IconExists = True
+        hChild = GetNextWindow(hChild, GW_HWNDNEXT)
+    Loop
+End Function
+
+Private Sub AdjustWindowsRects(ByVal hwnd As LongPtr)
+    Dim p1 As POINTAPI, p2 As POINTAPI, p3 As POINTAPI, p4 As POINTAPI, p5 As POINTAPI, p6 As POINTAPI
+    Dim tMsgBoxRect As RECT, tLVRect As RECT, tButtonRect As RECT, tTextRect As RECT
+    Dim tm As TEXTMETRIC
+    Dim sBuffer As String * 256, lRet As Long
+    Dim lLeft As Long, lTop As Long, lWidth As Long, lHeight As Long
+    Dim n As Long, lBkColor As Long, lNumberLines As Long, lEditHeight As Long
+    Dim hMsgBox As LongPtr, hButton As LongPtr, hwndChild As LongPtr
+    Dim hLib As LongPtr, hTempRichEdit As LongPtr
+    Dim hFont As LongPtr, hDC As LongPtr
+    hMsgBox = GetParent(hwnd)
+    Call GetWindowRect(hwnd, tLVRect)
+    p1.X = tLVRect.Left: p1.Y = tLVRect.Top
+    p2.X = tLVRect.Right: p2.Y = tLVRect.Bottom
+    Call ScreenToClient(hMsgBox, p1)
+    Call ScreenToClient(hMsgBox, p2)
+    If Len(sSmallDescription) Then
+        hLib = LoadLibrary(StrPtr("Msftedit.dll"))
+        If hLib Then
+            hTempRichEdit = CreateWindowEx(0&, StrPtr(MSFTEDIT_CLASS), StrPtr(sSmallDescription), WS_CHILD + WS_VISIBLE + ES_MULTILINE + ES_READONLY + ES_AUTOVSCROLL + WS_BORDER, CW_USEDEFAULT, CW_USEDEFAULT, tLVRect.Right - tLVRect.Left, 0&, GetParent(hwnd), NULL_PTR, GetModuleHandle(StrPtr(vbNullString)), ByVal 0&)
+            hFont = SendMessage(hEdit, WM_GETFONT, NULL_PTR, ByVal 0&)
+            hDC = GetDC(hTempRichEdit)
+            Call GetTextMetrics(hDC, tm)
+            Call ReleaseDC(hTempRichEdit, hDC)
+            Call SendMessage(hTempRichEdit, WM_SETFONT, hFont, True)
+            Call SendMessage(hTempRichEdit, EM_SETTARGETDEVICE, NULL_PTR, ByVal 1&)
+            lNumberLines = SendMessage(hTempRichEdit, EM_GETLINECOUNT, NULL_PTR, ByVal 0&)
+            If lNumberLines >= 1& Then
+                lEditHeight = tm.tmHeight * lNumberLines
+                Call SetWindowPos(hTempRichEdit, NULL_PTR, 0&, 0&, tLVRect.Right - tLVRect.Left, lEditHeight, SWP_NOACTIVATE + SWP_NOZORDER + SWP_NOMOVE)
+                Call SetWindowPos(hEdit, NULL_PTR, 0&, 0&, tLVRect.Right - tLVRect.Left, lEditHeight, SWP_NOACTIVATE + SWP_NOZORDER + SWP_NOMOVE)
+                Call DestroyWindow(hTempRichEdit)
+                Call SetWindowPos(hwnd, NULL_PTR, p1.X, p1.Y + lEditHeight + 15&, 0&, 0&, SWP_NOACTIVATE + SWP_NOZORDER + SWP_NOSIZE)
+            End If
+        End If
+    End If
+    hwndChild = GetNextWindow(hMsgBox, GW_CHILD)
+    Do While hwndChild
+        lRet = GetClassName(hwndChild, sBuffer, 256&)
+        If VBA.Left(sBuffer, lRet) = "Button" Then
+            n = n + 1&
+            ReDim Preserve ButtonsArray(n)
+            ButtonsArray(n) = hwndChild
+            Call GetWindowRect(hwndChild, tButtonRect)
+            p3.X = tButtonRect.Left: p3.Y = tButtonRect.Top
+            p4.X = tButtonRect.Right: p4.Y = tButtonRect.Bottom '
+            Call ScreenToClient(hMsgBox, p3)
+            Call ScreenToClient(hMsgBox, p4)
+            Call SetWindowPos(hwndChild, NULL_PTR, p2.X - ((p4.X - p3.X) + (n Mod 2& * 10&)) * (n), lEditHeight + p2.Y + (p4.Y - p3.Y) * 2&, 0&, 0&, SWP_NOACTIVATE + SWP_NOZORDER + SWP_NOSIZE)
+            If n = 1& Then
+                hButton = hwndChild
+                Call TranslateColor(GetSysColor(COLOR_BTNFACE), NULL_PTR, lBkColor)
+                hBrush = CreateSolidBrush(lBkColor)
+            End If
+        End If
+        hwndChild = GetNextWindow(hwndChild, GW_HWNDNEXT)
+    Loop
+    Call GetWindowRect(hButton, tButtonRect)
+    p5.X = tButtonRect.Top: p5.Y = tButtonRect.Bottom
+    p6.X = tButtonRect.Left: p6.Y = tButtonRect.Right
+    Call ScreenToClient(hMsgBox, p5)
+    Call ScreenToClient(hMsgBox, p6)
+    lWidth = p2.X + 50&
+    lHeight = p5.Y + (p4.Y - p3.Y) * 2.3
+    lLeft = (GetSystemMetrics(SM_CXSCREEN) - lWidth) / 2&
+    lTop = (GetSystemMetrics(SM_CYSCREEN) - lHeight) / 2&
+    Call SetWindowPos(hMsgBox, NULL_PTR, lLeft, lTop, lWidth, lHeight, SWP_NOACTIVATE + SWP_NOZORDER)
+End Sub
+
+Private Sub AddColums(ByVal hwnd As LongPtr, ByVal nColumns As Long, Ar() As Variant)
+    Dim lvcol As LVCOLUMNA
+    Dim i As Long
+    If bHasHeader Then
+        lvcol.mask = LVCF_TEXT
+        For i = 1& To nColumns
+            lvcol.pszText = CStr(Ar(0, i) & vbNullChar)
+            SendMessage hwnd, LVM_INSERTCOLUMN, i - 1, lvcol
+        Next
+    Else
+        For i = 1& To nColumns
+            SendMessage hwnd, LVM_INSERTCOLUMN, 1&, lvcol
+        Next
+    End If
+End Sub
+
+Private Sub AddTableEntries(ByVal hwnd As LongPtr, ByVal Row As Long, ByVal Col As Long, ByVal Text As String)
+    Dim lSpacing As Long
+    Static tLvItem As LVITEMA
+    Static lPrevRow As Long
+    If lPrevRow <> Row Then tLvItem.iItem = SendMessage(hwnd, LVM_GETITEMCOUNT, NULL_PTR, ByVal 0&)
+    lSpacing = Choose(eSpacing + 1, 0&, 2&, 0, 15&, 0&, 50&)
+    tLvItem.iSubItem = Col - 1&
+    tLvItem.mask = LVIF_TEXT
+    tLvItem.cchTextMax = Len(Text) & String(lSpacing, " ")
+    tLvItem.pszText = Text & String(lSpacing, " ")
+    Call SendMessage(hwnd, IIf(lPrevRow <> Row, LVM_INSERTITEM, LVM_SETITEM), NULL_PTR, tLvItem)
+    Call SendMessage(hLView, LVM_SETCOLUMNWIDTH, Col - 1&, ByVal LVSCW_AUTOSIZE)
+    lPrevRow = Row
+End Sub
+
+Private Function DefWinProc(ByVal hwnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByVal uIdSubclass As LongPtr, ByVal This As LongPtr) As LongPtr
+    Dim tWinRect As RECT, tButtonRect As RECT, tPt As POINTAPI
+    Dim tPS As PAINTSTRUCT, Button As Variant
+    Select Case True
+        Case uIdSubclass = GetProp(Application.hWndAccessApp, StrPtr("ListView"))
+            'If wMsg = WM_LBUTTONDOWN Then Exit Function
+        Case uIdSubclass = GetProp(Application.hWndAccessApp, StrPtr("Edit"))
+            If wMsg = WM_RBUTTONDOWN Or wMsg = WM_LBUTTONDOWN Then Exit Function
+        Case Else
+            If wMsg = WM_PAINT Then
+                Call BeginPaint(hwnd, tPS)
+                For Each Button In ButtonsArray
+                    Call GetWindowRect(Button, tButtonRect)
+                    tPt.X = tButtonRect.Left: tPt.Y = tButtonRect.Top
+                    Call ScreenToClient(hwnd, tPt)
+                Next
+                Call GetWindowRect(hwnd, tWinRect)
+                tWinRect.Left = 0&
+                tWinRect.Top = tPt.Y - 15&
+                Call FillRect(tPS.hDC, tWinRect, hBrush)
+                Call EndPaint(hwnd, tPS)
+            ElseIf wMsg = WM_ERASEBKGND Then
+                Exit Function
+            ElseIf wMsg = WM_SHOWWINDOW Then
+                ' Hide the cancel button
+                ShowWindow FindWindowEx(hwnd, 0, "Button", "Cancel"), 0 'SW_HIDE
+                ' Set the OK button window text to Close
+                Dim hButton As Long
+                hButton = FindWindowEx(hwnd, 0, "Button", "OK")
+                SetWindowText hButton, "Close"
+                ' Center the Button in the grey block
+                Dim BtnPlcmnt As WINDOWPLACEMENT
+                GetWindowPlacement hButton, BtnPlcmnt
+                SetWindowPos hButton, 0, BtnPlcmnt.rcNormalPosition.Left, BtnPlcmnt.rcNormalPosition.Top + 10&, 0&, 0&, SWP_NOACTIVATE + SWP_NOZORDER + SWP_NOSIZE
+            End If
+    End Select
+    If wMsg = WM_DESTROY Then
+        Call DeleteObject(hBrush): hBrush = NULL_PTR
+        Call RemoveWindowSubclass(hwnd, WndProcAddr, ByVal uIdSubclass)
+        bSubclassed = False
+    End If
+    DefWinProc = DefSubclassProc(hwnd, wMsg, wParam, lParam)
+End Function
+
+Private Function WndProcAddr() As LongPtr
+    WndProcAddr = VBA.CLng(AddressOf DefWinProc)
+End Function
+
+Private Function HIWORD(ByVal DWord As Long) As Long
+    HIWORD = (DWord And &HFFFF0000) / &H10000
+End Function
+
+Private Function LOWORD(ByVal DWord As Long) As Long
+    LOWORD = (DWord And &HFFFF&)
+End Function
+
